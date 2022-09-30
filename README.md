@@ -99,8 +99,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /path/to/host/cert/dir:/etc/certs
       - /path/to/host/dns/credentials:/var/dns
-    networks:
-      - server_internal
     restart: always
 ```
 
