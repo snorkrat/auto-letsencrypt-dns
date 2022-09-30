@@ -1,22 +1,44 @@
-### gordonchan/auto-letsencrypt
+# snorkrat/auto-letsencrypt-dns
 
-[![](https://images.microbadger.com/badges/image/gordonchan/auto-letsencrypt.svg)](http://microbadger.com/images/gordonchan/auto-letsencrypt "Get your own image badge on microbadger.com")
+A modified version of [gchan/auto-letsencrypt](https://github.com/gchan/auto-letsencrypt)
 
-A Docker image to automatically request and renew SSL/TLS certificates from [Let's Encrypt](https://letsencrypt.org/) using [certbot](https://certbot.eff.org/about/) and the [Webroot](https://certbot.eff.org/docs/using.html#webroot) method for domain validation. This image is also capable of sending a `HUP` signal to a Docker container running a web server in order to use the freshly minted certificates.
+A Docker image to automatically request and renew SSL/TLS certificates from [Let's Encrypt](https://letsencrypt.org/) using [certbot](https://certbot.eff.org/about/) and the [DNS-Plugins](https://eff-certbot.readthedocs.io/en/stable/using.html#dns-plugins) method for domain validation. This image is also capable of sending a `HUP` signal to a Docker container running a web server in order to use the freshly minted certificates.
 
-Based on the [quay.io/letsencrypt/letsencrypt](https://quay.io/repository/letsencrypt/letsencrypt) base image and inspired by [kvaps/letsencrypt-webroot](https://github.com/kvaps/docker-letsencrypt-webroot).
+The reason I made (modified) this was because I needed to have a secondary way to validate domain ownership while using [LinuxServer SWAG](https://github.com/linuxserver/docker-swag).  I use Cloudflare for my domain dns management, however I recently acquired some free domains (.tk, .ml, etc) which are blocked from using Cloudflare's API.  DigitalOcean also provide free DNS management, so I wanted to use their API to update my DNS recods for my free domains.  I use this to generate the certs and place them in a directory which is mapped to my SWAG continer.  I then created a secondary ssl.conf (ssl2.conf) file which points to the location of those certs.  Then in my subdomain.conf I can specify my ssl2.conf file so that it uses the correct certs for the alternate domain.
 
-For ease of auditability, this version is simplified with configuration removed or generalized.
+I exclusively use Docker Compose, so all examples will assume that you are using Docker Compose as well.
 
-### Example Usage
+## Example Usage
 
-As this image uses the webroot method, it assumes a web server is set up to serve ACME challenge files. For example, using Nginx:
+### Specify Certbot DNS-Plugin build
 
+As this image uses the DNS-Plugin method, you need to specify the build of certbot which includes your DNS-Plugin.  See [certbot/certbot](https://hub.docker.com/r/certbot/certbot) for a list of plugins including their tags.  Please set this as a build argument in your docker-compose.yml.
+
+A Docker Compose snippit to show this config:
 ```
-location '/.well-known/acme-challenge' {
-  root /var/www;
-}
+version: "3.9"
+services:
+  auto-letsencrypt-dns:
+    build:
+      context: ./dir
+      dockerfile: Dockerfile
+      args:
+        CERTBOTBUILD: dns-digitalocean:arm64v8-latest
+    image: myimage/auto-letsencrypt-dns
+    container_name: auto-letsencrypt-dns
 ```
+
+### Create credentials.ini and map the host directory to the container
+Please see the relevant [DNS-Plugins](https://eff-certbot.readthedocs.io/en/stable/using.html#dns-plugins) page for what you should include in your credentials.ini file.  Create this file on the host, and map the directory to the container.
+
+A Docker Compose snippit to show this config:
+```
+    environment:
+      - DNS_INI_PATH=/var/dns
+    volumes:
+      - /path/to/host/dns/credentials:/var/dns
+```
+### Server Config
 
 Your server container should be configured to be able use certificates retrieved by `certbot`. The certificates can be found at `/etc/letsencrypt/live/example.com` or be copied to a directory of your choice (see below). For example, using Nginx:
 
@@ -25,110 +47,74 @@ ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
 ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
 ```
 
-Run this image:
-
-```
-docker run -d
-  -e 'DOMAINS=example.com www.example.com' \
-  -e EMAIL=elliot@allsafe.com \
-  -v /etc/letsencrypt:/etc/letsencrypt \
-  -v /var/lib/letsencrypt:/var/lib/letsencrypt \
-  -v /tmp/letsencrypt:/var/www \
-  gordonchan/auto-letsencrypt
-```
 
 The container will attempt to request and renew SSL/TLS certificates for the specified domains and automatically repeat the renew process periodically (default is every 30 days).
 
-#### Optional features
+## Optional features
 
-##### Reload server configuration
+### Wildcard Certificates
+To generate a wildcard certificate for `*.example.com` which covers all subdomains, please also include the root domain in the `DOMAINS` environment variable. 
+
+A Docker Compose snippit to show this config:
+```
+    environment:
+      - DOMAINS=example.com *.example.com
+```
+### Reload server configuration
 To automatically reload the server configuration to use the new certificates, provide the container name to the environment variable `SERVER_CONTAINER` and pass through the Docker socket to this container: `-v /var/run/docker.sock:/var/run/docker.sock`. The image will send a `HUP` signal to the specified container.
 
-##### Copy certificates to another directory
+### Copy certificates to another directory
 Provide a directory path to the `CERTS_PATH` environment variable if you wish to copy the certificates to another directory. You may wish to do this in order to avoid exposing the entire `/etc/letsencrypt/` directory to your web server container.
 
-##### Customize webroot path
-To configure the webroot path use the `WEBROOT_PATH` environment variable. The default is `/var/www`.
-
-##### Change the check frequency
+### Change the check frequency
 Provide a number to the `CHECK_FREQ` environment variable to adjust how often it attempts to renew a certificate. The default is 30 days. Please note `certbot` is configured to keep matching certificates until one is due for renewal.
 
-#### An example using all of the features
+### Use the Staging environment
+Add the `STAGING` environment variable with a value of `1` to enable the staging environment.  This is useful for testing as you will not hit letsencrypt rate limits.  When everything is working, change the `STAGING` environment to `0` to generate a real cert.
+
+## An example using Docker Compose
 
 ```
-docker run -d
-  -e 'DOMAINS=example.com www.example.com' \
-  -e EMAIL=elliot@allsafe.com \
-  -e NGINX_CONTAINER=nginx \
-  -e SERVER_CONTAINER=nginx \
-  -e CERTS_PATH=/etc/nginx/certs \
-  -e WEBROOT_PATH=/var/www \
-  -e CHECK_FREQ=7 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v /etc/letsencrypt:/etc/letsencrypt \
-  -v /var/lib/letsencrypt:/var/lib/letsencrypt \
-  -v /tmp/letsencrypt:/var/www \
-  -v /etc/nginx/certs:/etc/nginx/certs \
-  gordonchan/auto-letsencrypt
-```
-
-#### An example using Docker Compose
-
-```
-version: '2'
-
+version: "3.9"
 services:
-  server:
-    container_name: server
-    image: gordonchan/nginx-ssl-ghost
-    volumes:
-      - certs:/etc/nginx/certs
-      - /tmp/letsencrypt/www:/tmp/letsencrypt/www
-    links:
-      - app:ghost
-    ports:
-      - "80:80"
-      - "443:443"
-    restart: unless-stopped
-
-  letsencrypt:
-    container_name: server
-    image: gordonchan/auto-letsencrypt
-    links:
-      - server
-    volumes:
-      - /var/log/letsencrypt/:/var/log/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /etc/letsencrypt:/etc/letsencrypt
-      - /var/lib/letsencrypt:/var/lib/letsencrypt
-      - /tmp/letsencrypt/www:/tmp/letsencrypt/www
-      - certs:/etc/nginx/certs
+  auto-letsencrypt-dns:
+    build:
+      context: ./dir
+      dockerfile: Dockerfile
+      args:
+        CERTBOTBUILD: dns-digitalocean:arm64v8-latest
+    image: myimage/auto-letsencrypt-dns
+    container_name: auto-letsencrypt-dns
     environment:
-      - EMAIL=elliot@allsafe.com
-      - SERVER_CONTAINER=server
-      - WEBROOT_PATH=/tmp/letsencrypt/www
-      - CERTS_PATH=/etc/nginx/certs
-      - DOMAINS=e-corp-usa.com www.e-corp-usa.com
-      - CHECK_FREQ=7
-    restart: unless-stopped
-
-  volumes:
-    certs:
+      - DOMAINS=example.com
+      - EMAIL=email@example.com
+      - DNS_PLUGIN=digitalocean
+      - DNS_INI_PATH=/var/dns
+      - CHECK_FREQ=30
+      - CERTS_PATH=/etc/certs
+      - STAGING=1
+      - SERVER_CONTAINER=swag
+    entrypoint: ./entrypoint.sh
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /path/to/host/cert/dir:/etc/certs
+      - /path/to/host/dns/credentials:/var/dns
+    networks:
+      - server_internal
+    restart: always
 ```
 
-#### Environment variables
+### Environment variables
 
 * **DOMAINS**: Domains for your certificate. e.g. `example.com www.example.com`.
+* **DNS_PLUGIN**: Specifiy the DNS-Plugin to use. e.g. `digitalocean`. Note: you still need to edit the build args! See above.
 * **EMAIL**: Email for urgent notices and lost key recovery. e.g. `your@email.tld`.
-* **WEBROOT_PATH** Path to the letsencrypt directory in the web server for checks. Defaults to `/var/www`.
+* **DNS_INI_PATH** Optional. Path to the credentials.ini directory in the web server for checks. Defaults to `/var/dns`.
 * **CERTS_PATH**: Optional. Copy the new certificates to the specified path. e.g. `/etc/nginx/certs`.
 * **SERVER_CONTAINER**: Optional. The Docker container name of the server you wish to send a `HUP` signal to in order to reload its configuration and use the new certificates.
 * **SERVER_CONTAINER_LABEL**: Optional. The Docker container label of the server you wish to send a `HUP` signal to in order to reload its configuration and use the new certificates. This environment variable will be helpfull in case of deploying with docker swarm since docker swarm will create container name itself.
-* **CHECK_FREQ**: How often (in days) to perform checks. Defaults to `30`.
+* **CHECK_FREQ**: Optional.  How often (in days) to perform checks. Defaults to `30`.
 
 #### License
 
 Copyright (c) 2016 Gordon Chan. Released under the MIT License. It is free software, and may be redistributed under the terms specified in the [LICENSE](https://github.com/gchan/dockerfiles/blob/master/LICENSE.txt) file.
-
-[![Analytics](https://ga-beacon.appspot.com/UA-70790190-2/dockerfiles/auto-letsencrypt/README.md?flat)](https://github.com/igrigorik/ga-beacon)
-
