@@ -1,7 +1,12 @@
 FROM alpine:latest
+LABEL maintainer="Snorkrat"
 
-RUN apk update && apk add --no-cache docker-cli bash shadow gcc python3-dev py3-pip musl-dev libffi-dev
-RUN pip install certbot \
+RUN \
+
+    echo "************ install dependencies ************" && \   
+    apk update && apk add --no-cache docker-cli bash shadow gcc python3-dev py3-pip musl-dev libffi-dev \
+    echo "************ add certbot dns-plugins ************" && \
+    pip install certbot \
     pip install certbot-dns-cloudflare \
     pip install certbot-dns-cloudxns \
     pip install certbot-dns-digitalocean \
@@ -17,6 +22,6 @@ RUN pip install certbot \
     pip install certbot-dns-route53 \
     pip install certbot-dns-sakuracloud
 
-COPY /script/entrypoint.sh .
+COPY /script /
 
-ENTRYPOINT [ "./entrypoint.sh" ]
+ENTRYPOINT [ "/script/entrypoint.sh" ]
