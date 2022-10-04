@@ -2,9 +2,9 @@ FROM alpine:latest
 LABEL maintainer="Snorkrat"
 
 RUN \
-    'echo ************ install dependencies ************' \
+    'echo "************ install dependencies ************"' \
     apk update && apk add --no-cache docker-cli bash shadow gcc python3-dev py3-pip musl-dev libffi-dev \
-    'echo ************ add certbot dns-plugins ************' \
+    'echo "************ add certbot dns-plugins ************"' \
     pip install certbot \
     pip install certbot-dns-cloudflare \
     pip install certbot-dns-cloudxns \
