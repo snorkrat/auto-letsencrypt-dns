@@ -2,13 +2,13 @@
 
 trap "exit" SIGHUP SIGINT SIGTERM
 
- echo "
-========================
- __    _  _     _  _ ___
-(_ |\|/ \|_)|/ |_)|_| | 
-__)| |\_/| \|\ | \| | | 
-
-========================"
+echo " _____ _   _ ___________ _   ________  ___ _____ ";
+echo "/  ___| \ | |  _  | ___ \ | / /| ___ \/ _ \_   _|";
+echo "\ \`--.|  \| | | | | |_/ / |/ / | |_/ / /_\ \| |  ";
+echo " \`--. \ . \` | | | |    /|    \ |    /|  _  || |  ";
+echo "/\__/ / |\  \ \_/ / |\ \| |\  \| |\ \| | | || |  ";
+echo "\____/\_| \_/\___/\_| \_\_| \_/\_| \_\_| |_/\_/  ";
+echo "                                                 ";
 
 if [ -z "$DOMAINS" ] ; then
   echo "No domains set, please fill -e 'DOMAINS=example.com www.example.com'"
@@ -26,7 +26,11 @@ if [ -z "$DNS_PLUGIN" ] ; then
 fi
 
 if [[ $STAGING -eq 1 ]]; then
-  echo "USING THE STAGING ENVIRONMENT"
+  echo "
+ +-+-+-+-+-+ +-+-+-+ +-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+-+-+-+-+
+ |U|S|I|N|G| |T|H|E| |S|T|A|G|I|N|G| |E|N|V|I|R|O|N|M|E|N|T|
+ +-+-+-+-+-+ +-+-+-+ +-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+-+-+-+-+
+"
   ADDITIONAL="--staging"
 fi
 
@@ -35,14 +39,16 @@ CERTBOT_DOMAINS=("${DOMAINS[*]/#/--domain }")
 CHECK_FREQ="${CHECK_FREQ:-30}"
 DNS_PLUGIN="${DNS_PLUGIN}"
 DNS_INI_PATH="${DNS_INI_PATH:-"/var/dns"}"
+DNS_WAIT="${DNS_WAIT:-"10"}"
 
 check() {
-  echo "* Starting DNS Plugin initial certificate request script..."
+  echo "* Starting initial certificate request script for ${DNS_PLUGIN}..."
 
   certbot certonly --agree-tos --noninteractive --text ${ADDITIONAL} --expand \
       --email ${EMAIL} \
       --dns-${DNS_PLUGIN} \
       --dns-${DNS_PLUGIN}-credentials ${DNS_INI_PATH}/credentials.ini \
+      --dns-${DNS_PLUGIN}-propagation-seconds ${DNS_WAIT} \
       ${CERTBOT_DOMAINS}
 
   echo "* Certificate request process finished for domain $DOMAINS"
@@ -67,7 +73,14 @@ check() {
   echo "* Next check in $CHECK_FREQ days"
 
   if [[ $STAGING -eq 1 ]]; then
-  echo "** REMINDER: This cert was generated using the STAGING environment.  For a real cert please change -e 'STAGING=0'"
+  echo " ";
+  echo " +-+-+-+-+-+-+-+ +-+-+-+-+ +-+-+-+ +-+-+-+-+-+-+-+-+-+-+-+-+";
+  echo " | | | |T|H|I|S| |C|E|R|T| |W|A|S| |G|E|N|E|R|A|T|E|D| | | |";
+  echo " +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+";
+  echo " |U|S|I|N|G| |T|H|E| |S|T|A|G|I|N|G| |E|N|V|I|R|O|N|M|E|N|T|";
+  echo " +-+-+-+-+-+ +-+-+-+ +-+-+-+-+-+-+-+ +-+-+-+-+-+-+-+-+-+-+-+";
+  echo "        For a real cert please change -e 'STAGING=0'";
+  echo " ";
   fi
 
   sleep ${CHECK_FREQ}d
