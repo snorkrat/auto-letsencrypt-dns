@@ -1,12 +1,8 @@
 FROM alpine:latest
 LABEL maintainer="Snorkrat"
 
-RUN \
-    /bin/echo "Installing Dependencies" \
-    apk update && apk add --no-cache docker-cli bash shadow gcc python3-dev py3-pip musl-dev libffi-dev 
-RUN \
-    /bin/echo "Installing DNS Plugins" \
-    pip install certbot \
+RUN apk update && apk add --no-cache docker-cli bash shadow gcc python3-dev py3-pip musl-dev libffi-dev
+RUN pip install certbot \
     pip install certbot-dns-cloudflare \
     pip install certbot-dns-cloudxns \
     pip install certbot-dns-digitalocean \
@@ -20,8 +16,8 @@ RUN \
     pip install certbot-dns-ovh \
     pip install certbot-dns-rfc2136 \
     pip install certbot-dns-route53 \
-    pip install certbot-dns-sakuracloud 
-    
+    pip install certbot-dns-sakuracloud
+
 ADD entrypoint.sh .
 
 ENTRYPOINT [ "./entrypoint.sh" ]
