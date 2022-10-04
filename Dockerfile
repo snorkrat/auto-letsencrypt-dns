@@ -17,6 +17,6 @@ RUN pip install certbot \
     pip install certbot-dns-route53 \
     pip install certbot-dns-sakuracloud
 
-ADD entrypoint.sh .
+COPY /script/entrypoint.sh .
 
 ENTRYPOINT [ "./entrypoint.sh" ]
