@@ -1,7 +1,8 @@
 FROM alpine:latest
 LABEL maintainer="Snorkrat"
 
-RUN 
+RUN \
+    echo "************ add certbot dns-plugins ************" \
     bash -c 'echo -e "************ install dependencies ************"' \   
     apk update && apk add --no-cache docker-cli bash shadow gcc python3-dev py3-pip musl-dev libffi-dev \
     echo "************ add certbot dns-plugins ************" \
