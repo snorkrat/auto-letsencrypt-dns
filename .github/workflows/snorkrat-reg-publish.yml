@@ -14,7 +14,8 @@ on:
     types: [published]
 
 env:
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }} # eg: snorkrat/auto-letsencrypt-dns.
+  IMAGE_NAME_SHORT: ${{ github.event.repository.name }} # eg: auto-letsencrypt-dns.
 
 jobs:
   build-and-push-image:
@@ -41,7 +42,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ secrets.SNORKRAT_REG_URL }}/${{ env.IMAGE_NAME }}
+          images: ${{ secrets.SNORKRAT_REG_URL }}/${{ env.IMAGE_NAME_SHORT }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
