@@ -6,6 +6,8 @@ The reason I made (modified) this was because I needed to have a secondary way t
 
 I exclusively use Docker Compose, so all examples will assume that you are using Docker Compose as well.
 
+Currently supports linux/amd64, linux/arm64/v8, linux/arm32/v6, and linux/arm32/v7.
+
 ## Example Usage
 
 ### Specify Certbot DNS-Plugin
