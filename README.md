@@ -6,7 +6,7 @@ The reason I made (modified) this was because I needed to have a secondary way t
 
 I exclusively use Docker Compose, so all examples will assume that you are using Docker Compose as well.
 
-Currently supports linux/amd64, linux/arm64/v8, linux/arm32/v6, and linux/arm32/v7.
+Currently supports linux/386, linux/amd64, linux/arm/v6, linux/arm/v7, linux/arm64/v8, linux/ppc64le, and linux/s390x.
 
 ## Example Usage
 
