@@ -1,6 +1,6 @@
 FROM alpine:latest
 LABEL Author=Snorkrat
-RUN apk update && apk add --no-cache docker-cli bash shadow gcc python3-dev py3-pip musl-dev libffi-dev rust
+RUN apk update && apk add --no-cache docker-cli bash shadow gcc python3-dev py3-pip musl-dev libffi-dev
 RUN pip install certbot \
     pip install certbot-dns-cloudflare \
     pip install certbot-dns-cloudxns \
