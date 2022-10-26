@@ -1,7 +1,8 @@
 FROM alpine:latest
 LABEL Author=Snorkrat
-RUN apk update && apk add --no-cache docker-cli bash shadow gcc python3-dev py3-pip musl-dev libffi-dev
-RUN pip install certbot \
+RUN apk update && apk add --no-cache docker-cli bash shadow gcc python3-dev py3-pip musl-dev libffi-dev openssl-dev cargo
+RUN pip install --upgrade pip \
+    pip install certbot \
     pip install certbot-dns-cloudflare \
     pip install certbot-dns-cloudxns \
     pip install certbot-dns-digitalocean \
