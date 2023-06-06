@@ -9,6 +9,7 @@ RUN pip install certbot \
     pip install certbot-dns-dnsmadeeasy \
     pip install certbot-dns-gehirn \
     pip install certbot-dns-google \
+    pip install certbot-dns-godaddy \
     pip install certbot-dns-linode \
     pip install certbot-dns-luadns \
     pip install certbot-dns-nsone \
