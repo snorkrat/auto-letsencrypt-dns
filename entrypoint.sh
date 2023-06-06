@@ -46,7 +46,7 @@ check() {
 
   certbot certonly --agree-tos --noninteractive --text ${ADDITIONAL} --expand \
       --email ${EMAIL} \
-      --dns-${DNS_PLUGIN} \
+      --authenticator dns-${DNS_PLUGIN} \
       --dns-${DNS_PLUGIN}-credentials ${DNS_INI_PATH}/credentials.ini \
       --dns-${DNS_PLUGIN}-propagation-seconds ${DNS_WAIT} \
       ${CERTBOT_DOMAINS}
